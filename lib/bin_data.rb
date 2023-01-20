@@ -1,4 +1,4 @@
-module ByteSpec
+module BinData
   # Given an array of keys and packed data formats
   # convert bytes into a hash
   #   https://ruby-doc.org/core-3.2.0/packed_data_rdoc.html
