@@ -38,9 +38,9 @@ module Fit
       expansions = []
 
       if field_profile['components']&.any?
-        _bit_ranges = bit_ranges(field_profile['bits'])
+        bit_ranges = BinData.bit_ranges(field_profile['bits'])
         field_profile['components'].map.with_index do |cfdn, index|
-          bit_range = _bit_ranges[index]
+          bit_range = bit_ranges[index]
           component_profile = field_profiles[cfdn]
           component_datum = datum[bit_range]
           expand(component_datum, component_profile)
@@ -51,22 +51,6 @@ module Fit
         end
 
         { name: field_profile['name'], value: datum, type: field_profile['type'], units: field_profile['units'] }
-      end
-    end
-
-    # Converts an array of bit counts into an array of ranges for indexing
-    #   ex: [12, 12] => [0..11, 11..23]
-    #
-    # [param] bit_count_array : Array(UInt)
-    # [return] Array(Range(UInt, UInt))
-    def bit_ranges(bit_count_array)
-      # Map the bits field into bit ranges
-      low_bit, high_bit = 0, 0
-      bit_count_array.map do |bit_count|
-        high_bit = low_bit + bit_count
-        range = low_bit...high_bit # exclusive range
-        low_bit = high_bit
-        range
       end
     end
 
