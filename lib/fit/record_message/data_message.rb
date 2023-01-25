@@ -16,7 +16,7 @@ module Fit
       new(definition: definition, header: header, data: data)
     end
 
-    # attr_reader :data
+    attr_reader :data
 
     def initialize(definition:, data:, **kwargs)
       super(**kwargs)
@@ -54,7 +54,7 @@ module Fit
       end
     end
 
-    def data
+    def data_expanded
       @data.map.with_index do |datum, index|
         field = @definition.fields[index]
         # TODO: Handle missing field profile

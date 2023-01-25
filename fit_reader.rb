@@ -13,4 +13,5 @@ require 'fit'
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Fit.logger = Logger.new($stdout, level: Logger::DEBUG)
-stream = Fit::Stream.read('2022-12-13-183027.fit')
+stream = Fit::Stream.read('2023-01-23-185222 (10-miles).fit')
+puts JSON.pretty_generate(stream.messages.map(&:data_expanded))

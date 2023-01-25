@@ -5,6 +5,7 @@ require 'json'
 require_relative 'header'
 require_relative 'record_header'
 require_relative 'record_message'
+require_relative '../crc16'
 
 module Fit
   # Represents a collection of Definitions and records for a fit stream as well
@@ -30,15 +31,22 @@ module Fit
     # [param] io : IO
     def self.from_io(io, profile: default_profile)
       stream = new
+      pos = io.pos
       stream.read_header(io)
       length = io.pos + stream.header.data_size
 
       while io.pos < length
-        message = stream.read_message(io)
+        stream.read_message(io)
       end
 
-      crc = io.read(2).unpack('S')
-      Fit.logger.debug { "CRC: #{crc}" }
+      stream.crc = io.read(2).unpack('S').first
+
+      if stream.crc == 0
+        Fit.logger.warn { "Skipping CRC check: CRC not provided" }
+      else
+        io.pos = pos # reset pos to calculate CRC16
+        crc_valid = Crc16.check(io, stream.crc, length: length)
+      end
 
       stream
     end
@@ -46,14 +54,15 @@ module Fit
     attr_accessor :header # : Header
     attr_reader :definitions # : Hash(UInt, DefinitionMessage)
     attr_reader :messages # : Array(DataMessage)
+    attr_accessor :crc
 
     # [param] profile : Hash
-    def initialize(profile: self.class.default_profile)
+    def initialize(profile: self.class.default_profile, crc: nil)
       @header = nil
       @definitions = {}
       @messages = []
       @profile = profile
-      @crc
+      @crc = crc
     end
 
     # [param] io : IO
@@ -77,7 +86,8 @@ module Fit
         raise NoDefinitionError.new("Could not find definition") unless definition
 
         DataMessage.from_io(header, definition, io).tap do |message|
-          Fit.logger.debug { JSON.pretty_generate(message.data) }
+          Fit.logger.debug { "Read DataMessage: #{message.data}" }
+          yield message if block_given?
           @messages << message
         end
       end

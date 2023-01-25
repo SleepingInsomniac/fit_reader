@@ -40,7 +40,7 @@ module Fit
       data_hash = case bytes.length
       when 11
         Fit.logger.debug { "Parsing 12 byte header" }
-        BinData.bytes_to_hash(SPEC_12, bytes)
+        BinData.bytes_to_hash(SPEC_12, bytes).merge(header_size: 12)
       when 13
         Fit.logger.debug { "Parsing 14 byte header" }
         BinData.bytes_to_hash(SPEC_14, bytes)
@@ -49,28 +49,43 @@ module Fit
         raise UnknownFormat.new("Cannot read header of size #{bytes.size} bytes")
       end
 
-      Fit.logger.debug { JSON.pretty_generate(data_hash) }
+      Fit.logger.debug { "Read Header: #{data_hash}" }
 
       new(**data_hash)
     end
 
-    attr_reader :protocol_version
-    attr_reader :profile_version
-    attr_reader :data_size
-    attr_reader :data_type
-    attr_reader :crc
+    attr_accessor :protocol_version
+    attr_accessor :profile_version
+    attr_accessor :data_size
+    attr_accessor :data_type
+    attr_accessor :crc
+    attr_accessor :header_size
 
     # [param] protocol_version : UInt8
     # [param] profile_version : UInt8
     # [param] data_size : UInt16
     # [param] data_type : String
     # [param] crc : Uint16
-    def initialize(protocol_version:, profile_version:, data_size:, data_type:, crc:)
+    def initialize(protocol_version:, profile_version:, data_size:, data_type:, crc:, header_size: 14)
       @protocol_version = protocol_version
       @profile_version = profile_version
       @data_size = data_size
       @data_type = data_type
+      unless @data_type == ".FIT"
+        Fit.logger.warn { "data type not .FIT! read: `#{@data_type}`" }
+      end
       @crc = crc
+      @header_size = header_size
+    end
+
+    def to_bytes
+      [
+        @protocol_version,
+        @profile_version,
+        @data_size,
+        @data_type,
+        @crc,
+      ].pack(SPEC_14.values.join)
     end
   end
 end
